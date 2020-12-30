@@ -33,7 +33,7 @@ def gaussian_filter(img, K_size=3, sigma=1.3):
     return out
 
 
-def  sharpen(image):
+def sharpen(image):
     # 锐化
     kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], np.float32)  # 定义一个核
     dst = cv2.filter2D(image, -1, kernel=kernel)
