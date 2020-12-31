@@ -1,41 +1,5 @@
 import numpy as np
 from skimage.measure import label
-# move = [-1, 0 ,1]
-
-# def consecutive_helper(binary, target, i, j, label, consecutive_map):
-#     print(i, j)
-#     if binary[i][j] != target:
-#         return
-#     if consecutive_map[i][j] != 0:
-#         return 
-#     consecutive_map[i][j] = label
-#     for x_move in move:
-#         for y_move in move:
-#             x = i + x_move
-#             y = j + y_move
-#             if (x == i and y == j):
-#                 continue
-#             if (x >= 0 and x < binary.shape[0] and y >= 0 and y < binary.shape[1]):
-#                 consecutive_helper(binary, target, x, y, label, consecutive_map)
-#     return
-# def consecutive_field(binary, target):
-#     """
-#         param:
-#             binary: a binary classification of the pixel wise image
-#             target: 1 or 0, indicating the type of prediction of the pixels to find the consecutive field
-#         return: 
-#             consecutive_map: ndarray
-#             label: list 
-#     """
-#     h, w = binary.shape
-#     consecutive_map = np.zeros((h, w))
-#     cnt = 1
-#     for i in range(h):
-#         for j in range(w):
-#             if consecutive_map[i][j] == 0 and binary[i][j] == target:
-#                 consecutive_helper(binary, target, i, j, cnt, consecutive_map)
-#                 cnt += 1
-#     return consecutive_map, [i for i in range(1, cnt)]
 
 def consecutive_field(binary, target):
     """
@@ -57,8 +21,10 @@ class consecutive_field_rec:
         self.top = 10e10
         self.down = -1
         self.label = label
+    
     def __str__(self):
         return "Area: " + str(self.A) + " pixels: " +  str(self.pixels) + " left: " +  str(self.left) + " right: " +  str(self.right) + " top: " +  str(self.top) + " down: " +  str(self.down)
+    
     def update(self, i, j):
         self.pixels += 1
         if self.top > i:
@@ -69,7 +35,7 @@ class consecutive_field_rec:
             self.left = j
         if self.right < j:
             self.right = j
-    def get_consecutive_field_metrix(self, size):
+    def get_metrix(self, size):
         retangle_area = (self.down - self.top + 1) * (self.right - self.left + 1)
         self.area_density = self.pixels / retangle_area
         self.width_length_ratio = (self.down - self.top + 1) / (self.right - self.left + 1)
@@ -97,19 +63,25 @@ def get_consecutive_field_rec(consecutive_map, labels):
     return rec
 
 
-def filter1(rec, consecutive_map, labels, binary):
+def filter1(rec, consecutive_map, labels, binary, threshhold):
     image_size = binary.shape[0] * binary.shape[1]
     filter_out_label = []
     # first time filtering
     for label, rec in rec.items():
-        rec.get_consecutive_field_metrix(image_size)
-        print(rec.hole_ratio)
-        if rec.hole_ratio > 0.95:
+        rec.get_metrix(image_size)
+
+        print("hole_ratio:", rec.hole_ratio)
+        print("area_density:", rec.area_density)
+        print("width_length_ratio:", rec.width_length_ratio)
+        print("consecutive_field_size_ratio:", rec.consecutive_field_size_ratio)
+
+        if rec.hole_ratio > threshhold["hole_ratio"]:
             filter_out_label.append(label)
-        if rec.width_length_ratio < 0.7: 
+        if rec.width_length_ratio < threshhold["width_length_ratio"]: 
             filter_out_label.append(label)
-        if rec.area_density < 0.3:
+        if rec.area_density < threshhold["area_density"]:
             filter_out_label.append(label)
+    
     h, w = binary.shape
     for i in range(h):
         for j in range(w):

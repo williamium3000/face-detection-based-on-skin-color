@@ -11,5 +11,5 @@ if __name__ == "__main__":
             image = cv2.imread(file_path)
             if image.shape[2] != 3:
                 continue
-            image = preprocess_util.pre_process(image)
+            image = preprocess_util.preprocess(image)
             cv2.imwrite(os.path.join("helen_small4seg\preprocessed", file_name), image)

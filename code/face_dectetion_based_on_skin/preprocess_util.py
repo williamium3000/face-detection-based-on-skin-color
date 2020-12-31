@@ -62,7 +62,7 @@ def normalize(merged):
     return out1
 
 
-def pre_process(image):
+def preprocess(image):
     a = gaussian_filter(image, K_size=3, sigma=1.3)
     b = sharpen(a)
     c = enhancement(b)
@@ -72,7 +72,7 @@ def pre_process(image):
 if __name__ == '__main__':
     
     image = cv2.imread('sample.jpg')
-    image = pre_process(image)
+    image = preprocess(image)
     cv2.imwrite("testbak.jpg", image)
     # cv2.imshow("final",x)
     # cv2.waitKey(0)

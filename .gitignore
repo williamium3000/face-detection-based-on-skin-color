@@ -130,5 +130,6 @@ dmypy.json
 
 # customized
 helen_small4seg
-.*
+*.jpg
+*.jpeg
 settings.json
