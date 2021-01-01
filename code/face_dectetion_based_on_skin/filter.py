@@ -62,6 +62,14 @@ def get_consecutive_field_rec(consecutive_map, labels):
                 rec[label].A += label_margin[2] - label_margin[1] + 1
     return rec
 
+def get_probability(consecutive_map, labels, probability):
+    ans = {}
+    for label in labels:
+        mask = np.copy(consecutive_map)
+        mask[mask == label] = 1
+        mask[mask != label] = 0
+        ans[label] = 1 - np.prod(a = 1 - mask * probability)
+    return ans
 
 def filter1(rec, consecutive_map, labels, binary, threshhold):
     image_size = binary.shape[0] * binary.shape[1]
@@ -70,10 +78,10 @@ def filter1(rec, consecutive_map, labels, binary, threshhold):
     for label, rec in rec.items():
         rec.get_metrix(image_size)
 
-        print("hole_ratio:", rec.hole_ratio)
-        print("area_density:", rec.area_density)
-        print("width_length_ratio:", rec.width_length_ratio)
-        print("consecutive_field_size_ratio:", rec.consecutive_field_size_ratio)
+        # print("hole_ratio:", rec.hole_ratio)
+        # print("area_density:", rec.area_density)
+        # print("width_length_ratio:", rec.width_length_ratio)
+        # print("consecutive_field_size_ratio:", rec.consecutive_field_size_ratio)
 
         if rec.hole_ratio > threshhold["hole_ratio"]:
             filter_out_label.append(label)
