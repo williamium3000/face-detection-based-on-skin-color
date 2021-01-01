@@ -43,7 +43,6 @@ class consecutive_field_rec:
         self.consecutive_field_size_ratio = self.pixels / size
 
 def get_consecutive_field_rec(consecutive_map, labels):
-    labels = list(range(1, labels + 1))
     rec = dict(zip(labels, [consecutive_field_rec(labels[i]) for i in range(len(labels))]))
     for i in range(consecutive_map.shape[0]):
         margin = dict(zip(labels, [[False, 10e10, -1] for i in range(len(labels))]))
@@ -68,7 +67,7 @@ def get_probability(consecutive_map, labels, probability):
         mask = np.copy(consecutive_map)
         mask[mask == label] = 1
         mask[mask != label] = 0
-        ans[label] = 1 - np.prod(a = 1 - mask * probability)
+        ans[label] = 1 - np.prod(a = 1 - mask.reshape(-1) * probability)
     return ans
 
 def filter1(rec, consecutive_map, labels, binary, threshhold):
