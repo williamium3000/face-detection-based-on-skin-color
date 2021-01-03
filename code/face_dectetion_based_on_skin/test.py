@@ -1,6 +1,5 @@
 import numpy as np
 
-test = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3]])
-test2 = np.copy(test)
-test2[0, 0] = 100
-print(test)
+a = {"a":[1, 2], "b":[2, 3]}
+b = np.array(list(a.values()))
+print(np.array([(b - b[:, 0].reshape(-1, 1))[:, 1] * np.random.uniform(low = 0, high = 1, size = 2) + b[:, 0] for i in range(10)]))

@@ -27,7 +27,7 @@ def case(img_path, label_path, YCbCr):
 
 
 if __name__ == "__main__":
-    test_image_name = "300852540_1"
+    test_image_name = "2349481463_1"
     # test_image_path = os.path.join("helen_small4seg/preprocessed", test_image_name + ".jpg")
     test_image_path = os.path.join("helen_small4seg/images", test_image_name + ".jpg")
     # test_image_path = "test2.jpg"
@@ -70,9 +70,9 @@ if __name__ == "__main__":
 
 
     consecutive_map, labels = filter.consecutive_field(result, 1)
+    labels = list(range(1, labels + 1))
     rec = filter.get_consecutive_field_rec(consecutive_map, labels)
-
-    threshhold = {"hole_ratio" : 0.95, "width_length_ratio" : 0.7, "area_density" : 0.3}
+    threshhold = {"hole_ratio" : 0.9185858, "width_length_ratio" : 0.90308, "area_density" : 0.3825445}
 
     result = filter.filter1(rec, consecutive_map, labels, result, threshhold)
 
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     plt.imshow(open_and_close_operation_after_filter, cmap='Greys_r') 
 
     consecutive_map, labels = filter.consecutive_field(result, 1)
+    labels = list(range(1, labels + 1))
     rec = filter.get_consecutive_field_rec(consecutive_map, labels)
 
     result_image = cv2.imread(test_image_path)
