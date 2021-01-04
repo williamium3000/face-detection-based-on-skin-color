@@ -6,6 +6,7 @@ import filter
 import cv2
 import joblib
 import os
+from sklearn.mixture import GaussianMixture
 def case(img_path, label_path, YCbCr):
     image = Image.open(img_path)
     # image = image.resize((500, 500)) 
@@ -27,7 +28,7 @@ def case(img_path, label_path, YCbCr):
 
 
 if __name__ == "__main__":
-    test_image_name = "2349481463_1"
+    test_image_name = "2062420464_1"
     # test_image_path = os.path.join("helen_small4seg/preprocessed", test_image_name + ".jpg")
     test_image_path = os.path.join("helen_small4seg/images", test_image_name + ".jpg")
     # test_image_path = "test2.jpg"
@@ -38,13 +39,14 @@ if __name__ == "__main__":
     classifier = joblib.load(r'code/face_dectetion_based_on_skin/MultinomialNB_with_YCbCr.pkl')
     # classifier = joblib.load(r'code\face_dectetion_based_on_skin\MultinomialNB.pkl')
     
+    
     test_img, test_label, original_shape = case(img_path = test_image_path, label_path = test_label_path, YCbCr = True)
     
-    # result = classifier.predict(test_img)
-    result = classifier.predict_proba(test_img)[:, 1]
-    print(result.shape)
-    result[result > 0.5] = 1
-    result[result <= 0.5] = 0
+    result = classifier.predict(test_img)
+    # result = classifier.predict_proba(test_img)[:, 1]
+    # print(result.shape)
+    # result[result > 0.5] = 1
+    # result[result <= 0.5] = 0
     # print(result, result2)
 
     result = result.reshape(original_shape[0], -1)
@@ -59,9 +61,9 @@ if __name__ == "__main__":
     plt.imshow(binary_before_filter, cmap='Greys_r')
 
     # open and close operation before filter
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    # result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=3)
-    # result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=2)
+    result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
 
 
     plt.subplot(2, 3, 2)
@@ -72,7 +74,7 @@ if __name__ == "__main__":
     consecutive_map, labels = filter.consecutive_field(result, 1)
     labels = list(range(1, labels + 1))
     rec = filter.get_consecutive_field_rec(consecutive_map, labels)
-    threshhold = {"hole_ratio" : 0.9185858, "width_length_ratio" : 0.90308, "area_density" : 0.3825445}
+    threshhold = {"hole_ratio" : 1, "width_length_ratio" : 0.90308, "area_density" : 0.3825445}
 
     result = filter.filter1(rec, consecutive_map, labels, result, threshhold)
 

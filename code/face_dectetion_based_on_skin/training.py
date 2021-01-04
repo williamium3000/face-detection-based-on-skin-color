@@ -3,6 +3,7 @@ import numpy as np
 from sklearn import naive_bayes
 import joblib
 import os
+from sklearn.mixture import GaussianMixture
 def case(img_path, label_path, YCbCr):
     image = Image.open(img_path)
     if YCbCr:
@@ -51,11 +52,14 @@ def train(GaussianNB, YCbCr):
             joblib.dump(classifier, 'MultinomialNB.pkl')
 
 if __name__ == "__main__":
-    train(GaussianNB = True, YCbCr = True)
-    print("done")
-    train(GaussianNB = True, YCbCr = False)
-    print("done")
-    train(GaussianNB = False, YCbCr = True)
-    print("done")
-    train(GaussianNB = False, YCbCr = False)
-    print("done")
+    image, label = case("helen_small4seg/images/271580597_1.jpg", "helen_small4seg/SegClassLabel/271580597_1.png", True)
+    gm = GaussianMixture(n_components=5).fit(image, label)
+    
+    # train(GaussianNB = True, YCbCr = True)
+    # print("done")
+    # train(GaussianNB = True, YCbCr = False)
+    # print("done")
+    # train(GaussianNB = False, YCbCr = True)
+    # print("done")
+    # train(GaussianNB = False, YCbCr = False)
+    # print("done")
