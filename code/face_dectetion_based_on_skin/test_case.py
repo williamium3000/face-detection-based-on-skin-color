@@ -28,15 +28,16 @@ def case(img_path, label_path, YCbCr):
 
 
 if __name__ == "__main__":
+    threshhold = {"before" : True, "hole_ratio" : 1, "width_length_ratio" : 0.90308, "area_density" : 0.3825445, "size_ratio" : 0.4}
     test_image_name = "2062420464_1"
     # test_image_path = os.path.join("helen_small4seg/preprocessed", test_image_name + ".jpg")
-    test_image_path = os.path.join("helen_small4seg/images", test_image_name + ".jpg")
+    test_image_path = os.path.join("helen_small4seg\preprocessed", test_image_name + ".jpg")
     # test_image_path = "test2.jpg"
-    test_label_path = os.path.join("helen_small4seg/SegClassLabel", test_image_name + ".png")
+    test_label_path = os.path.join("helen_small4seg\SegClassLabel", test_image_name + ".png")
 
     # classifier = joblib.load(r'code\face_dectetion_based_on_skin\GaussianNB_with_YCbCr.pkl')
     # classifier = joblib.load(r'code\face_dectetion_based_on_skin\GaussianNB.pkl')
-    classifier = joblib.load(r'code/face_dectetion_based_on_skin/MultinomialNB_with_YCbCr.pkl')
+    classifier = joblib.load(r'code\face_dectetion_based_on_skin\MultinomialNB_with_YCbCr.pkl')
     # classifier = joblib.load(r'code\face_dectetion_based_on_skin\MultinomialNB.pkl')
     
     
@@ -61,9 +62,10 @@ if __name__ == "__main__":
     plt.imshow(binary_before_filter, cmap='Greys_r')
 
     # open and close operation before filter
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=2)
-    result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
+    if threshhold["before"]:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=2)
+        result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
 
 
     plt.subplot(2, 3, 2)
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     consecutive_map, labels = filter.consecutive_field(result, 1)
     labels = list(range(1, labels + 1))
     rec = filter.get_consecutive_field_rec(consecutive_map, labels)
-    threshhold = {"hole_ratio" : 1, "width_length_ratio" : 0.90308, "area_density" : 0.3825445}
+
 
     result = filter.filter1(rec, consecutive_map, labels, result, threshhold)
 

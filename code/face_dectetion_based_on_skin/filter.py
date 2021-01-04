@@ -88,6 +88,8 @@ def filter1(rec, consecutive_map, labels, binary, threshhold):
             filter_out_label.append(label)
         if rec.area_density < threshhold["area_density"]:
             filter_out_label.append(label)
+        if rec.consecutive_field_size_ratio < threshhold["size_ratio"]:
+            filter_out_label.append(label)
     
     h, w = binary.shape
     for i in range(h):

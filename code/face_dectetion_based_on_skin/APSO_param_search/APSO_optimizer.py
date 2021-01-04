@@ -65,6 +65,11 @@ class APSO_optimizer:
         self.v = 0.5 * np.array([(bounding_matrix - bounding_matrix[:, 0].reshape(-1, 1))[:, 1] * np.random.uniform(low = 0, high = 1, size = self.dimension) + bounding_matrix[:, 0] for i in range(self.population)])
         self.swarm = np.array([(bounding_matrix - bounding_matrix[:, 0].reshape(-1, 1))[:, 1] * np.random.uniform(low = 0, high = 1, size = self.dimension) + bounding_matrix[:, 0] for i in range(self.population)])
 
+        # prior setting
+        self.swarm[0] = np.array([1, 0.95, 0.9, 0.38, 0.4])
+        self.swarm[1] = np.array([0, 0.95, 0.9, 0.45, 0.3])
+        self.swarm[2] = np.array([1, 1, 0.92, 0.35, 0.2])
+
         self.lower_bound_x = np.array([bounding_matrix[:, 0] for i in range(self.population)])
         self.upper_bound_x = np.array([bounding_matrix[:, 1] for i in range(self.population)])
         self.lower_bound_v = 0.5 * np.array([bounding_matrix[:, 0] for i in range(self.population)])
@@ -183,13 +188,14 @@ class APSO_optimizer:
         self._initialization()
         i = 0
         for i in range(iteration):
-            if shown:
-                    print("current global best value: ", 1 - self.GbestValue)
-                    print("current swarm best value: ", 1 - self.PbestValue)
             self._ESE_get_f()
             self._ESE_param_tuning()
             self._ELS(i, iteration)
             for j in range(internal_iteration):
+                if shown:
+                    print("{} epoch:\n".format(i * internal_iteration + j))
+                    print("current global best value: ", 1 - self.GbestValue)
+                    print("current swarm best value: ", 1 - self.PbestValue)
                 self._move()
                 self._evaluate()
         print("results:", 1 - self.GbestValue)
