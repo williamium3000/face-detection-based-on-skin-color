@@ -8,6 +8,10 @@ import numpy as np
 import cv2
 import os
 import APSO_optimizer
+import time
+import multiprocessing
+
+
 def case(img_path, label_path, YCbCr):
     image = Image.open(img_path)
     if YCbCr:
@@ -41,6 +45,7 @@ def get_image(file_path, image_directory, label_directory, YCbCr):
     )
 class hyperparamSearch:
     def __init__(self, clf_path, num_of_val, pin_memory):
+        self.pool = multiprocessing.Pool(processes = 6)
         self.num_of_val = num_of_val
         self.classifier = joblib.load(clf_path)
         image_gen = get_image(file_path = r"helen_small4seg\val.txt", image_directory = r"helen_small4seg\preprocessed", label_directory = r"helen_small4seg\SegClassLabel", YCbCr = True)
@@ -58,11 +63,21 @@ class hyperparamSearch:
                     yield next(image_gen)
             self.val_set = gen_wrapper()
 
+    def __getstate__(self):
+        self_dict = self.__dict__.copy()
+        del self_dict['pool']
+
+        return self_dict
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
     def trail_helper(self, test_img, original_shape, test_label, hyperparam):
         result = self.classifier.predict(test_img)
         result_prob = self.classifier.predict_proba(test_img)[:, 1]
         result = result.reshape(original_shape[0], -1)
         test_label = test_label.reshape(original_shape[0], -1)
+        
 
         if hyperparam["before"]:
         # open and close operation before filter
@@ -70,13 +85,14 @@ class hyperparamSearch:
             result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=2)
             result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
 
+
         consecutive_map, labels = filter.consecutive_field(result, 1)
         labels = list(range(1, labels + 1))
-        rec = filter.get_consecutive_field_rec(consecutive_map, labels)
+        rec = filter.get_consecutive_field_rec(consecutive_map)
 
-        # threshhold = {"hole_ratio" : 0.95, "width_length_ratio" : 0.7, "area_density" : 0.3}
 
-        result = filter.filter1(rec, consecutive_map, labels, result, hyperparam)
+
+        result = filter.filter1(rec, consecutive_map, result, hyperparam)
 
         # open and close operation after filter
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
@@ -85,49 +101,63 @@ class hyperparamSearch:
 
         consecutive_map, labels = filter.consecutive_field(result, 1)
         labels = list(range(1, labels + 1))
-        rec = filter.get_consecutive_field_rec(consecutive_map, labels)
+        rec = filter.get_consecutive_field_rec(consecutive_map)
         probability_rec = filter.get_probability(consecutive_map, labels, result_prob)
         pred_boxes = []
         pred_scores = []
         gt_boxes = []
         iou_threshhold = 0.5
-        for label, label_rec in rec.items():
-            pred_scores.append(probability_rec[label])
-            pred_boxes.append([label_rec.top, label_rec.left, label_rec.down, label_rec.right])
+        for prop in rec:
+            pred_scores.append(probability_rec[prop.label])
+            pred_boxes.append(list(prop.bbox))
 
 
         test_label = cv2.morphologyEx(test_label, cv2.MORPH_CLOSE, kernel, iterations=3)
         test_label = cv2.morphologyEx(test_label, cv2.MORPH_OPEN, kernel, iterations=3)
         consecutive_map_label, labels_label = filter.consecutive_field(test_label, 1)
         labels_label = list(range(1, labels_label + 1))
-        rec_label = filter.get_consecutive_field_rec(consecutive_map_label, labels_label)
-        for label, label_rec in rec_label.items():
-            gt_boxes.append([label_rec.top, label_rec.left, label_rec.down, label_rec.right])
-        
+        rec_label = filter.get_consecutive_field_rec(consecutive_map_label)
+        for prop in rec_label:
+            gt_boxes.append(list(prop.bbox))
         return np.array(pred_boxes), np.array(pred_scores), np.array(gt_boxes)
 
 
     def trail(self, hyperparam):
+        start = time.time()
         pred_boxes = []
         pred_scores = []
         gt_boxes = []
         class_labels = []
         gt_labels = []
-        cnt = 1
+
+        # parallel 
+        results = []
         for image, label, original_shape in self.val_set:
-            # print("evaluate {} images".format(cnt))
-            cnt += 1
-            pred_boxes_, pred_scores_, gt_boxes_ = self.trail_helper(image, original_shape, label, hyperparam)
-            # print("pred_boxes_:", pred_boxes_.shape)
-            # print("pred_scores_:", pred_scores_)
-            # print("gt_boxes_:", gt_boxes_.shape)
+            results.append(self.pool.apply_async(self.trail_helper, (image, original_shape, label, hyperparam)))   
+
+        for result in results:
+            pred_boxes_, pred_scores_, gt_boxes_ = result.get()
             pred_boxes.append(pred_boxes_)
             pred_scores.append(pred_scores_)
             gt_boxes.append(gt_boxes_)
             class_labels.append(np.zeros_like(pred_scores_))
             gt_labels.append(np.zeros(gt_boxes_.shape[0]))
 
+        # for image, label, original_shape in self.val_set:
+        #     # print("evaluate {} images".format(cnt))
+        #     # cnt += 1
+        #     pred_boxes_, pred_scores_, gt_boxes_ = self.trail_helper(image, original_shape, label, hyperparam)
+        #     # print("pred_boxes_:", pred_boxes_.shape)
+        #     # print("pred_scores_:", pred_scores_)
+        #     # print("gt_boxes_:", gt_boxes_.shape)
+        #     pred_boxes.append(pred_boxes_)
+        #     pred_scores.append(pred_scores_)
+        #     gt_boxes.append(gt_boxes_)
+        #     class_labels.append(np.zeros_like(pred_scores_))
+        #     gt_labels.append(np.zeros(gt_boxes_.shape[0]))
+
         ans = mAP.eval_detection_voc(pred_boxes, class_labels, pred_scores, gt_boxes, gt_labels, gt_difficults=None,iou_thresh=0.5, use_07_metric=False)
+
         return ans["map"]
         
 if __name__ == "__main__":

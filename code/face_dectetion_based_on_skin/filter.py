@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.measure import label
+from skimage.measure import label, regionprops
 
 def consecutive_field(binary, target):
     """
@@ -36,30 +36,36 @@ class consecutive_field_rec:
         if self.right < j:
             self.right = j
     def get_metrix(self, size):
-        retangle_area = (self.down - self.top + 1) * (self.right - self.left + 1)
-        self.area_density = self.pixels / retangle_area
+        # retangle_area = (self.down - self.top + 1) * (self.right - self.left + 1)
+        # self.area_density = self.pixels / retangle_area
         self.width_length_ratio = (self.down - self.top + 1) / (self.right - self.left + 1)
         self.hole_ratio = self.pixels / self.A
         self.consecutive_field_size_ratio = self.pixels / size
+    def set_bbox(self, bbox):
+        self.top, self.left, self.down, self.right = bbox
 
-def get_consecutive_field_rec(consecutive_map, labels):
-    rec = dict(zip(labels, [consecutive_field_rec(labels[i]) for i in range(len(labels))]))
-    for i in range(consecutive_map.shape[0]):
-        margin = dict(zip(labels, [[False, 10e10, -1] for i in range(len(labels))]))
-        for j in range(consecutive_map.shape[1]):
-            label = consecutive_map[i, j]
-            if label == 0:
-                continue
-            margin[label][0] = True
-            if j < margin[label][1]:
-                margin[label][1] = j
-            if j > margin[label][2]:
-                margin[label][2] = j
-            rec[label].update(i, j)
-        for label, label_margin in margin.items():
-            if label_margin[0]:
-                rec[label].A += label_margin[2] - label_margin[1] + 1
-    return rec
+def get_consecutive_field_rec(consecutive_map):
+    props = regionprops(consecutive_map)
+    return props
+
+    # rec = dict(zip(labels, [consecutive_field_rec(labels[i]) for i in range(len(labels))]))
+    # for i in range(consecutive_map.shape[0]):
+    #     margin = dict(zip(labels, [[False, 10e10, -1] for i in range(len(labels))]))
+    #     for j in range(consecutive_map.shape[1]):
+    #         label = consecutive_map[i, j]
+    #         if label == 0:
+    #             continue
+    #         margin[label][0] = True
+    #         if j < margin[label][1]:
+    #             margin[label][1] = j
+    #         if j > margin[label][2]:
+    #             margin[label][2] = j
+    #         rec[label].update(i, j)
+    #     for label, label_margin in margin.items():
+    #         if label_margin[0]:
+    #             rec[label].A += label_margin[2] - label_margin[1] + 1
+    # return rec
+
 
 def get_probability(consecutive_map, labels, probability):
     ans = {}
@@ -70,28 +76,32 @@ def get_probability(consecutive_map, labels, probability):
         ans[label] = 1 - np.prod(a = 1 - mask.reshape(-1) * probability)
     return ans
 
-def filter1(rec, consecutive_map, labels, binary, threshhold):
+def filter1(rec, consecutive_map, binary, threshhold):
     image_size = binary.shape[0] * binary.shape[1]
     filter_out_label = []
+    h, w = binary.shape
+    size = h * w
     # first time filtering
-    for label, rec in rec.items():
-        rec.get_metrix(image_size)
-
+    for prop in rec:
+        top, left, down, right = prop.bbox
+        area_density = prop.extent
+        width_length_ratio = (down - top + 1) / (right - left + 1)
+        hole_ratio = prop.area / prop.convex_area
+        consecutive_field_size_ratio = prop.area / size
         # print("hole_ratio:", rec.hole_ratio)
         # print("area_density:", rec.area_density)
         # print("width_length_ratio:", rec.width_length_ratio)
         # print("consecutive_field_size_ratio:", rec.consecutive_field_size_ratio)
-
-        if rec.hole_ratio > threshhold["hole_ratio"]:
+        label = prop.label
+        if hole_ratio > threshhold["hole_ratio"]:
             filter_out_label.append(label)
-        if rec.width_length_ratio < threshhold["width_length_ratio"]: 
+        if width_length_ratio < threshhold["width_length_ratio"]: 
             filter_out_label.append(label)
-        if rec.area_density < threshhold["area_density"]:
+        if area_density < threshhold["area_density"]:
             filter_out_label.append(label)
-        if rec.consecutive_field_size_ratio < threshhold["size_ratio"]:
+        if consecutive_field_size_ratio < threshhold["size_ratio"]:
             filter_out_label.append(label)
     
-    h, w = binary.shape
     for i in range(h):
         for j in range(w):
             if (consecutive_map[i, j] in filter_out_label):

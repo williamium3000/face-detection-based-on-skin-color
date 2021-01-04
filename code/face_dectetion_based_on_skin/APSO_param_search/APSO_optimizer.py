@@ -35,6 +35,7 @@ def param_class(parameters, type, evaluation_func):
 
 class APSO_optimizer:
     def __init__(self, population, w, c1, c2, evaluatin_instance):
+        print("__init__")
         self.population = population
         self.w = w
         self.c1 = c1
@@ -52,6 +53,7 @@ class APSO_optimizer:
         return 1 - self.evaluatin_instance.evaluation(param)
 
     def _initialization(self):
+        print("_initialization")
         self.v = np.zeros((self.population, self.dimension))
         self.swarm = np.zeros((self.population, self.dimension))
 
@@ -83,6 +85,7 @@ class APSO_optimizer:
 
 
         for i in range(self.swarm.shape[0]):
+            print(i)
             self.PbestValue[i] = self.eval(self.swarm[i])
 
         self.PbestPos = self.swarm.copy()
@@ -94,6 +97,7 @@ class APSO_optimizer:
         self.GbestPos = self.PbestPos[index].copy()
 
     def _ESE_get_f(self):
+        print("_ESE_get_f")
         dis = np.zeros(self.population)
         for i in range(self.population):
             dis[i] = np.sum((np.sum((self.swarm - self.swarm[i,:]) ** 2, axis = 1) ** 0.5)) / (self.population - 1)
@@ -102,6 +106,7 @@ class APSO_optimizer:
         self.f = (dis[self.global_best_particle_index] - min) / (max - min)
 
     def _ESE_param_tuning(self):
+        print("_ESE_param_tuning")
         self.w = 1 / (1 + 1.5 * np.exp(-2.6 * self.f))
         eta1 = np.random.uniform(0.05, 0.1)
         eta2 = np.random.uniform(0.05, 0.1)
@@ -126,6 +131,7 @@ class APSO_optimizer:
         self.c2 = c2_t
 
     def _ELS(self, current_iteration, total_iteration):
+        print("_ELS")
         selected_d = np.random.randint(0, self.dimension - 1)
         sigma = 1 - (1 - 0.1) * current_iteration / total_iteration
         new = self.swarm[self.global_best_particle_index].copy()
@@ -148,6 +154,7 @@ class APSO_optimizer:
         self.swarm[self.swarm < self.lower_bound_x] = self.lower_bound_x[self.swarm < self.lower_bound_x]
         self.swarm[self.swarm > self.upper_bound_x] = self.upper_bound_x[self.swarm > self.upper_bound_x]
     def _move(self):
+        print("_move")
         self.v = self.w * self.v + self.c1 * random.random() * (self.PbestPos - self.swarm) + self.c2 * random.random() * (self.GbestPos - self.swarm)
         self._formalize_v()
 
@@ -161,6 +168,7 @@ class APSO_optimizer:
         t_i_worst = -1
         eval_temp = -1
         for i in range(self.swarm.shape[0]):
+            print("evaluating {}th particle".format(i))
             eval_temp = self.eval(self.swarm[i])
             if self.PbestValue[i] > eval_temp:
                 self.PbestValue[i] = eval_temp
