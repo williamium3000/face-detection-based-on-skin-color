@@ -45,7 +45,7 @@ def get_image(file_path, image_directory, label_directory, YCbCr):
     )
 class hyperparamSearch:
     def __init__(self, clf_path, num_of_val, pin_memory):
-        self.pool = multiprocessing.Pool(processes = 6)
+        self.pool = multiprocessing.Pool(processes = 12)
         self.num_of_val = num_of_val
         self.classifier = joblib.load(clf_path)
         image_gen = get_image(file_path = r"helen_small4seg\val.txt", image_directory = r"helen_small4seg\preprocessed", label_directory = r"helen_small4seg\SegClassLabel", YCbCr = True)
