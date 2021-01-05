@@ -165,5 +165,5 @@ if __name__ == "__main__":
     # hyperparam = {"hole_ratio" : 0.95, "width_length_ratio" : 0.7, "area_density" : 0.3, "before" : False}
     # print(test.trail(hyperparam))
     evaluatin_instance = hyperparamSearch(clf_path = r"code\face_dectetion_based_on_skin\MultinomialNB_with_YCbCr.pkl", num_of_val = 50, pin_memory = True)
-    optim = APSO_optimizer.APSO_optimizer(population = 30, w = 0.9, c1 = 2, c2 = 2, evaluatin_instance = evaluatin_instance)
-    optim.fit(iteration = 8, internal_iteration = 3, shown = True)
+    optim = APSO_optimizer.APSO_optimizer(population = 40, w = 0.9, c1 = 2, c2 = 2, evaluatin_instance = evaluatin_instance)
+    optim.fit(iteration = 3, internal_iteration = 2, shown = True)

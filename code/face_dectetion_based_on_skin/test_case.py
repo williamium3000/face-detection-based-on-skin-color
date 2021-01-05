@@ -28,8 +28,8 @@ def case(img_path, label_path, YCbCr):
 
 
 if __name__ == "__main__":
-    threshhold = {"before" : True, "hole_ratio" : 1, "width_length_ratio" : 0.90308, "area_density" : 0.3825445, "size_ratio" : 0.4}
-    test_image_name = "2062420464_1"
+    threshhold = {"before" : False, "hole_ratio" : 0.89977567, "width_length_ratio" : 0.63737102, "area_density" : 0.29574023, "size_ratio" : 0.16352742}
+    test_image_name = "2124708927_1"
     # test_image_path = os.path.join("helen_small4seg/preprocessed", test_image_name + ".jpg")
     test_image_path = os.path.join("helen_small4seg\preprocessed", test_image_name + ".jpg")
     # test_image_path = "test2.jpg"
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
 
     # diretory binary image from classifier
-    plt.subplot(2, 3, 1)
+    plt.subplot(2, 2, 1)
     binary_before_filter = result * 255
     plt.imshow(binary_before_filter, cmap='Greys_r')
 
@@ -68,19 +68,19 @@ if __name__ == "__main__":
         result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
 
 
-    plt.subplot(2, 3, 2)
-    open_and_close_operation_before_filter = result * 255
-    plt.imshow(open_and_close_operation_before_filter, cmap='Greys_r') 
+    # plt.subplot(2, 3, 2)
+    # open_and_close_operation_before_filter = result * 255
+    # plt.imshow(open_and_close_operation_before_filter, cmap='Greys_r') 
 
 
     consecutive_map, labels = filter.consecutive_field(result, 1)
     labels = list(range(1, labels + 1))
-    rec = filter.get_consecutive_field_rec(consecutive_map, labels)
+    rec = filter.get_consecutive_field_rec(consecutive_map)
 
 
-    result = filter.filter1(rec, consecutive_map, labels, result, threshhold)
+    result = filter.filter1(rec, consecutive_map, result, threshhold)
 
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 2, 2)
     result_after_filter = result * 255
     plt.imshow(result_after_filter, cmap='Greys_r') 
 
@@ -89,24 +89,24 @@ if __name__ == "__main__":
     result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=3)
     result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
     open_and_close_operation_after_filter = result.reshape(original_shape[0], -1) * 255
-    plt.subplot(2, 3, 4)
+    plt.subplot(2, 2, 3)
     plt.imshow(open_and_close_operation_after_filter, cmap='Greys_r') 
 
     consecutive_map, labels = filter.consecutive_field(result, 1)
     labels = list(range(1, labels + 1))
-    rec = filter.get_consecutive_field_rec(consecutive_map, labels)
+    rec = filter.get_consecutive_field_rec(consecutive_map)
 
     result_image = cv2.imread(test_image_path)
     # result_image = cv2.resize(result_image, (500, 500), interpolation = cv2.INTER_AREA)
-    for label, label_rec in rec.items():
-        cv2.rectangle(result_image, (label_rec.left, label_rec.top + 10), (label_rec.right, label_rec.down), (0, 0, 255), 2)
+    for prop in rec:
+        cv2.rectangle(result_image, (prop.bbox[1], prop.bbox[0] + 15), (prop.bbox[3], prop.bbox[2] - 30), (0, 0, 255), 2)
         # # print(label, ": ")
         # # print(label_rec)
     b,g,r = cv2.split(result_image)
     result_image = cv2.merge([r,g,b])
-    plt.subplot(2, 3, 5)
+    plt.subplot(2, 2, 4)
     plt.imshow(result_image) #画图
-    plt.axis('off') #关闭坐标轴
+    # plt.axis('off') #关闭坐标轴
     plt.show()
     # print(label)
     # print(consecutive_map)

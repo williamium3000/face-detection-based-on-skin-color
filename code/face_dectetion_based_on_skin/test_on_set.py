@@ -1,0 +1,116 @@
+from PIL import Image
+import numpy as np
+from sklearn import naive_bayes
+from matplotlib import pyplot as plt
+import filter
+import cv2
+import joblib
+import os
+from sklearn.mixture import GaussianMixture
+def case(img_path, label_path, YCbCr):
+    image = Image.open(img_path)
+    # image = image.resize((500, 500)) 
+    if YCbCr:
+        image = image.convert("YCbCr")
+    image = np.array(image)
+    shape = image.shape
+    image = image.reshape(-1, 3)
+
+    label = Image.open(label_path)
+    label = np.array(label)
+    label[label == 1] = 1
+    label[label == 6] = 1
+    label[label != 1] = 0
+    label = label.reshape(-1)
+
+    return image, label, shape
+
+
+
+if __name__ == "__main__":
+    threshhold = {"before" : False, "hole_ratio" : 0.89977567, "width_length_ratio" : 0.63737102, "area_density" : 0.29574023, "size_ratio" : 0.16352742}
+    test_image_names = ["2124708927_1", "291541184_1", "302142585_1", "1045887134_1", "288094234_1", "296961468_1"]
+    plt.figure()
+    # classifier = joblib.load(r'code\face_dectetion_based_on_skin\GaussianNB_with_YCbCr.pkl')
+    # classifier = joblib.load(r'code\face_dectetion_based_on_skin\GaussianNB.pkl')
+    classifier = joblib.load(r'code\face_dectetion_based_on_skin\MultinomialNB_with_YCbCr.pkl')
+    # classifier = joblib.load(r'code\face_dectetion_based_on_skin\MultinomialNB.pkl')
+    cnt = 0
+    for test_image_name in test_image_names:
+        cnt += 1
+        # test_image_path = os.path.join("helen_small4seg/preprocessed", test_image_name + ".jpg")
+        test_image_path = os.path.join("helen_small4seg\preprocessed", test_image_name + ".jpg")
+        # test_image_path = "test2.jpg"
+        test_label_path = os.path.join("helen_small4seg\SegClassLabel", test_image_name + ".png")
+
+        
+        
+        test_img, test_label, original_shape = case(img_path = test_image_path, label_path = test_label_path, YCbCr = True)
+        
+        result = classifier.predict(test_img)
+        # result = classifier.predict_proba(test_img)[:, 1]
+        # print(result.shape)
+        # result[result > 0.5] = 1
+        # result[result <= 0.5] = 0
+        # print(result, result2)
+
+        result = result.reshape(original_shape[0], -1)
+
+
+
+        # diretory binary image from classifier
+        # plt.subplot(2, 2, 1)
+        # binary_before_filter = result * 255
+        # plt.imshow(binary_before_filter, cmap='Greys_r')
+
+        # open and close operation before filter
+        if threshhold["before"]:
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+            result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=2)
+            result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
+
+
+        # plt.subplot(2, 3, 2)
+        # open_and_close_operation_before_filter = result * 255
+        # plt.imshow(open_and_close_operation_before_filter, cmap='Greys_r') 
+
+
+        consecutive_map, labels = filter.consecutive_field(result, 1)
+        labels = list(range(1, labels + 1))
+        rec = filter.get_consecutive_field_rec(consecutive_map)
+
+
+        result = filter.filter1(rec, consecutive_map, result, threshhold)
+
+        # plt.subplot(2, 2, 2)
+        # result_after_filter = result * 255
+        # plt.imshow(result_after_filter, cmap='Greys_r') 
+
+        # open and close operation after filter
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        result = cv2.morphologyEx(result, cv2.MORPH_CLOSE, kernel, iterations=3)
+        result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel, iterations=2)
+        open_and_close_operation_after_filter = result.reshape(original_shape[0], -1) * 255
+        # plt.subplot(2, 2, 3)
+        # plt.imshow(open_and_close_operation_after_filter, cmap='Greys_r') 
+
+        consecutive_map, labels = filter.consecutive_field(result, 1)
+        labels = list(range(1, labels + 1))
+        rec = filter.get_consecutive_field_rec(consecutive_map)
+
+        result_image = cv2.imread(test_image_path)
+        # result_image = cv2.resize(result_image, (500, 500), interpolation = cv2.INTER_AREA)
+        for prop in rec:
+            cv2.rectangle(result_image, (prop.bbox[1], prop.bbox[0] + 15), (prop.bbox[3], prop.bbox[2] - 40), (0, 0, 255), 2)
+            # # print(label, ": ")
+            # # print(label_rec)
+        b,g,r = cv2.split(result_image)
+        result_image = cv2.merge([r,g,b])
+        plt.subplot(2, 3, cnt)
+        plt.imshow(result_image) #画图
+        # plt.axis('off') #关闭坐标轴
+        # plt.show()
+        # print(label)
+        # print(consecutive_map)
+    
+    plt.show()
