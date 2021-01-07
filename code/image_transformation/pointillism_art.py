@@ -53,4 +53,5 @@ def create_pointillism_art(image_path, primary_colors):
             cv2.ellipse(canvas, (x, y), (radius_width, radius_width), 0, 0, 360, color, -1, cv2.LINE_AA)
     return canvas
 
-res = create_pointillism_art('img.jpg', 20)
+res = create_pointillism_art('test3.jpeg', 10)
+cv2.imwrite("point.jpg", res)
